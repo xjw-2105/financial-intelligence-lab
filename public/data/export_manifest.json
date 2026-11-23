@@ -1,0 +1,11 @@
+{
+  "filename": "v3_matlab_aggregates.json",
+  "jsonBytes": 348946,
+  "sha256": "dfdbe9c0346635a1a0833530dbf2f8f571c8eb793f390987173fcb9bca7ceecd",
+  "runs": 9,
+  "numFrozenChecks": 9,
+  "passed": 9,
+  "runThresholds": 9026,
+  "countComparisons": 126364,
+  "matlab": "R2025b 25.2.0.2998904"
+}

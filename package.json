@@ -1,0 +1,38 @@
+{
+  "name": "financial-intelligence-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/domain.test.ts",
+    "test:browser": "node tests/browser.mjs"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.8.2",
+    "@visx/axis": "4.0.0",
+    "@visx/scale": "4.0.0",
+    "@visx/shape": "4.0.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "motion": "14.14.0",
+    "radix-ui": "1.8.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.1",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.187.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "playwright-core": "1.65.1",
+    "tailwindcss": "4.3.5",
+    "typescript": "5.9.3",
+    "vite": "8.3.8"
+  },
+  "version": "2.0.0"
+}
