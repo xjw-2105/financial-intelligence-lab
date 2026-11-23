@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { costAgainstLowRisk, costPresets, unitCost, type CostPreset } from '../domain/cost'
 import type { ExperimentState, FrozenRun } from '../domain/experiment'
 import { metricsAt } from '../domain/metrics'
@@ -5,7 +6,10 @@ import { costNumber, count } from '../ui/format'
 import type { ControlsDispatch } from './Controls'
 import Tradeoff from './Tradeoff'
 
-export default function Committee({ run, index, state, dispatch }: { run: FrozenRun; index: number; state: ExperimentState; dispatch: ControlsDispatch }) {
+const decision = '暂缓独立上岗，继续监督测试'
+
+export default function Committee({ run, index, state, dispatch, projection }: { run: FrozenRun; index: number; state: ExperimentState; dispatch: ControlsDispatch; projection: boolean }) {
+  const basis = useRef<HTMLDetailsElement>(null)
   const { tp, fp, fn } = metricsAt(run.groups.All, index)
   const result = costAgainstLowRisk(tp, fp, fn, run.nCases, state.priceFP, state.priceFN)
 
@@ -15,6 +19,15 @@ export default function Committee({ run, index, state, dispatch }: { run: Frozen
 
   return (
     <>
+      {projection && <aside className="decision-summary" aria-label="委员会结论速览">
+        <p><span>委员会固定建议</span><strong>{decision}</strong></p>
+        <button type="button" className="button secondary small" onClick={() => {
+          if (!basis.current) return
+          basis.current.open = true
+          basis.current.querySelector('summary')?.focus({ preventScroll: true })
+          basis.current.scrollIntoView({ block: 'center' })
+        }}>查看决议依据</button>
+      </aside>}
       <div className="cost-grid">
         <article className="panel costs-panel" aria-labelledby="cost-title">
           <div className="section-heading"><div><p className="micro-label bronze">COST SCENARIO</p><h2 id="cost-title">假设成本模拟</h2></div></div>
@@ -58,8 +71,8 @@ export default function Committee({ run, index, state, dispatch }: { run: Frozen
         <Tradeoff key={`${run.featureSet}_${run.model}_${state.dimension}_${state.gap}`} run={run} index={index} state={state} dispatch={dispatch} />
       </div>
       <article className="decision" aria-labelledby="decision-title">
-        <div><p className="micro-label bronze">COMMITTEE DECISION</p><h2 id="decision-title">暂缓独立上岗，继续监督测试</h2><p>固定的课程情景建议 · 成本或阈值调整时保持本结论。保留人工监督，补做时间稳定性审计。</p></div>
-        <details><summary>展开决议依据与局限</summary><div>
+        <div><p className="micro-label bronze">COMMITTEE DECISION</p><h2 id="decision-title">{decision}</h2><p>固定的课程情景建议 · 成本或阈值调整时保持本结论。保留人工监督，补做时间稳定性审计。</p></div>
+        <details ref={basis}><summary>展开决议依据与局限</summary><div>
           <p>不同阈值会重新分配误报和漏判。群体差距与排序效能共同用于判断能否进入下一轮验证。</p>
           <p>目前缺少实际审批与损失、客户级隔离和更成熟的时间验证。建议以更长观测期复核群体表现，再讨论部署决策。</p>
         </div></details>

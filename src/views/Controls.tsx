@@ -24,18 +24,22 @@ export function RunControls({ run, index, dispatch, projection, focusThreshold }
           {features.map(feature => <button type="button" key={feature} aria-pressed={feature === run.featureSet} onClick={() => selectRun(`${feature}_${run.model}`)}>{feature}</button>)}
         </div></fieldset>
       </div>
-      <ThresholdControl key={`${run.featureSet}_${run.model}`} run={run} index={index} dispatch={dispatch} projection={projection} />
+      <ThresholdControl key={`${run.featureSet}_${run.model}_${focusThreshold}`} run={run} index={index} dispatch={dispatch} projection={projection} startLocal={focusThreshold} />
     </section>
   )
 }
 
-function ThresholdControl({ run, index, dispatch, projection }: { run: FrozenRun; index: number; dispatch: ControlsDispatch; projection: boolean }) {
+function ThresholdControl({ run, index, dispatch, projection, startLocal }: { run: FrozenRun; index: number; dispatch: ControlsDispatch; projection: boolean; startLocal: boolean }) {
   const [draft, setDraft] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
-  const [focus, setFocus] = useState<ReturnType<typeof focusInterval> | null>(null)
+  const frozen = frozenIndex(run)
+  const [focus, setFocus] = useState(() => {
+    if (!startLocal) return null
+    const { min, max } = focusInterval(run.thresholds.length, frozen)
+    return { min: Math.min(min, index), max: Math.max(max, index) }
+  })
   const threshold = run.thresholds[index]
   const formatted = decimal(threshold)
-  const frozen = frozenIndex(run)
   const f1 = run.thresholds.indexOf(run.frozenThresholds.F1)
   const end = run.thresholds.length - 1
   const { min, max } = focus
@@ -104,10 +108,10 @@ function ThresholdControl({ run, index, dispatch, projection }: { run: FrozenRun
       </div>
       <div className="threshold-tools">
         <button className="button small local-tool" type="button" disabled={f1 < 0} onClick={() => jump(f1)}>验证集 F1 点</button>
+        <button className="button small local-tool threshold-range" type="button" onClick={() => setFocus(focus ? null : focusInterval(run.thresholds.length, index))}>{focus ? '查看全域' : '局部细调'}</button>
         <details className="advanced-threshold" key={String(projection)} open={!projection}>
           <summary>阈值高级操作</summary>
           <div className="threshold-advanced-tools">
-            <button className="button small local-tool" type="button" aria-pressed={Boolean(focus)} onClick={() => setFocus(focus ? null : focusInterval(run.thresholds.length, index))}>局部细调</button>
             <details className="precise-threshold"><summary>精确阈值</summary>
               <div><output data-testid="exact-threshold">{String(threshold)}</output><button className="button small local-tool" type="button" onClick={copyExact}>复制</button></div>
             </details>

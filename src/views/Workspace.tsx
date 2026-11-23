@@ -38,7 +38,7 @@ export default function Workspace({ scene, state, dispatch, projection, focusThr
             <m.div key={scene} initial={reduced || projection ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced || projection ? 0 : 0.24 }}>
               {scene === 'audit' ? <Audit data={data} run={run} index={index} state={state} dispatch={dispatch} projection={projection} /> : (
                 <Suspense fallback={<p role="status">正在载入成本与权衡曲线…</p>}>
-                  <Committee run={run} index={index} state={state} dispatch={dispatch} />
+                  <Committee run={run} index={index} state={state} dispatch={dispatch} projection={projection} />
                 </Suspense>
               )}
             </m.div>

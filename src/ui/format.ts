@@ -1,4 +1,4 @@
-import { displayGap, higherErrorGroup, type GapView, type GroupDimension } from '../domain/experiment'
+import { displayGap, higherErrorGroup, type GapMetric, type GapView, type GroupDimension } from '../domain/experiment.ts'
 
 const counts = new Intl.NumberFormat('en-US')
 const money = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
@@ -21,4 +21,13 @@ export function gapDirection(gap: number | null, dimension: GroupDimension) {
   const group = higherErrorGroup(gap, dimension)
   const small = Math.abs(gap) < 0.005
   return group === null ? '两组相同' : `${group} 组较高${small ? '（差距不足 0.005 个百分点）' : ''}`
+}
+
+export function errorDirection(gap: number | null, dimension: GroupDimension, metric: GapMetric) {
+  if (gap === null) return '分母不足，无法比较两组'
+  const group = higherErrorGroup(gap, dimension)
+  if (group === null) return '两组的错误率相同'
+  const outcome = metric === 'fpr' ? '未违约者的误报率' : '违约者的漏判率'
+  const rounding = Math.abs(gap) < 0.005 ? '（差距不足 0.005 个百分点）' : ''
+  return `${group} 组${outcome}更高${rounding}`
 }

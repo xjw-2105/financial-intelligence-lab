@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { activeIndex, displayGap, experimentReducer, focusInterval, frozenComparison, frozenIndex, frozenSexBootstrap, groupGap, higherErrorGroup, initialState, nearestIndex, previousThresholdIndex, thresholdDelta, tradeoffPoints, type Dataset, type RunKey } from '../src/domain/experiment.ts'
 import { costAgainstLowRisk, costPresets, scenarioCost, unitCost } from '../src/domain/cost.ts'
+import { errorDirection, signed } from '../src/ui/format.ts'
 import { gapPP, metricsAt } from '../src/domain/metrics.ts'
 
 const read = (name: string) => readFileSync(new URL(`../public/data/${name}`, import.meta.url), 'utf8')
@@ -232,4 +233,17 @@ test('both preset prices update atomically without changing the frozen point', (
     const result = costAgainstLowRisk(tp, fp, fn, full.nCases, state.priceFP, state.priceFN)!
     assert.deepEqual([result.total, result.baseline, result.difference], expected)
   }
+})
+
+
+test('direction wording explains the correct class, group and undefined denominators', () => {
+  const index = frozenIndex(full)
+  assert.equal(errorDirection(groupGap(full, index, 'sex', 'fpr'), 'sex', 'fpr'), 'F 组未违约者的误报率更高')
+  assert.equal(errorDirection(groupGap(full, index, 'sex', 'fnr'), 'sex', 'fnr'), 'M 组违约者的漏判率更高')
+  assert.equal(errorDirection(-1, 'age', 'fpr'), '18–29 组未违约者的误报率更高')
+  assert.equal(errorDirection(1, 'age', 'fnr'), '60–100 组违约者的漏判率更高')
+  assert.equal(errorDirection(0, 'sex', 'fpr'), '两组的错误率相同')
+  assert.match(errorDirection(-0.001, 'sex', 'fpr'), /F 组.*不足 0\.005/)
+  assert.equal(signed(null), '不可计算')
+  assert.match(errorDirection(null, 'sex', 'fnr'), /分母不足/)
 })

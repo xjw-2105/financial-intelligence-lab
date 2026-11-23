@@ -3,7 +3,7 @@ import { AxisBottom, AxisLeft } from '@visx/axis'
 import { scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
 import { dimensions, frozenIndex, frozenSexBootstrap, tradeoffPoints, type ExperimentState, type FrozenRun } from '../domain/experiment'
-import { gapDirection, gapNumber, percent } from '../ui/format'
+import { decimal, gapDirection, gapNumber, percent } from '../ui/format'
 import { DimensionToggle, GapViewToggle, type ControlsDispatch } from './Controls'
 
 const width = 650
@@ -34,7 +34,6 @@ export default function Tradeoff({ run, index, state, dispatch }: { run: FrozenR
   const current = points.find(p => p.index === index)
   const frozen = points.find(p => p.index === frozenIndex(run))
   const selected = hover === null ? current : points.find(p => p.index === hover) ?? current
-  const path = useMemo(() => points.map(p => `M${x(p.balanced).toFixed(2)} ${y(p.ordinate).toFixed(2)}h.7`).join(' '), [points, x, y])
   const choose = (index: number) => dispatch({ type: 'index', index: index === frozenIndex(run) ? null : index })
   const tickStyle = { fill: '#a0b3c7', fontSize: 13, fontFamily: 'ui-monospace, monospace' }
 
@@ -75,7 +74,7 @@ export default function Tradeoff({ run, index, state, dispatch }: { run: FrozenR
       <div className="chart-axis-title">{state.gap.toUpperCase()} {absolute ? `绝对差距 |${gap}|` : `有方向差距 ${gap}`} · 百分点</div>
       <p className="chart-reading"><b>越接近零，所选指标的组间差异越小。</b> {absolute ? '原始方向见当前点说明。' : `正值表示 ${last} 组较高，负值表示 ${first} 组较高。`}</p>
       <div className="point-detail" data-testid="current-tradeoff" aria-live="polite">
-        <span>当前阈值 <b>{run.thresholds[index]}</b></span>
+        <span>当前阈值 <b>{decimal(run.thresholds[index])}</b></span>
         <span>平衡准确率 <b>{percent(current?.balanced ?? null)}</b></span>
         <span>{absolute ? '绝对' : '有方向'}差距 <b>{gapNumber(current?.gap ?? null, state.gapView)}</b>{current && ' 个百分点'} · {gapDirection(current?.gap ?? null, state.dimension)}</span>
       </div>
@@ -95,13 +94,13 @@ export default function Tradeoff({ run, index, state, dispatch }: { run: FrozenR
         <line data-testid="gap-zero" x1={left} x2={right} y1={y(0)} y2={y(0)} stroke="#acc4d7" strokeWidth={1.25} strokeDasharray="5 4" />
         <text x={right - 6} y={y(0) - 5} textAnchor="end" fill="#c0d4e2" fontSize={12}>零差距</text>
         <LinePath data={points} x={point => x(point.balanced)} y={point => y(point.ordinate)} stroke="#7cc5f8" strokeWidth={1.1} strokeOpacity={0.56} />
-        <path d={path} stroke="#93c5e6" strokeWidth={1.5} strokeLinecap="round" opacity={0.6} />
         {frozen && <circle data-testid="frozen-point" onPointerUp={event => { event.stopPropagation(); choose(frozen.index) }} cx={x(frozen.balanced)} cy={y(frozen.ordinate)} r={7.5} stroke="#ccb48e" strokeWidth={1.8} fill="none" />}
         {current && <circle data-testid="selected-point" cx={x(current.balanced)} cy={y(current.ordinate)} r={4.7} fill="#b0deff" stroke="#08131d" strokeWidth={1.5} />}
         {selected && hover !== null && selected.index !== current?.index && <circle cx={x(selected.balanced)} cy={y(selected.ordinate)} r={5.5} fill="#f2f4f7" />}
       </svg>
       <div className="chart-axis-foot"><span>总体平衡准确率</span><span><i className="dot current" />当前 <i className="dot frozen" />冻结 FPR10</span></div>
-      {selected && selected.index !== current?.index && <p className="control-note">指向阈值 {selected.threshold} · 平衡准确率 {percent(selected.balanced)} · 差距 {gapNumber(selected.gap, state.gapView)} 个百分点</p>}
+      <details className="precise-threshold chart-precision"><summary>当前点精确阈值</summary><output>{run.thresholds[index]}</output></details>
+      {selected && selected.index !== current?.index && <p className="control-note">指向阈值 {decimal(selected.threshold)} · 平衡准确率 {percent(selected.balanced)} · 差距 {gapNumber(selected.gap, state.gapView)} 个百分点</p>}
       <p className="control-note">曲线按阈值顺序连接已导出的工作点，未做帕累托最优前沿筛选。点击离散点或用左右方向键选择阈值。</p>
       <p className="control-note">{index !== frozenIndex(run) ? '无置信区间的交互探索 · 仅描述当前测试记录。' : frozenSexBootstrap(run, index, state.dimension) ? '性别有方向差距的冻结点区间见审计页。' : '冻结点的描述性差距 · 本页未展示置信区间。'}{state.dimension === 'age' && ' 年龄档来自匿名化日期转换。'}</p>
     </article>

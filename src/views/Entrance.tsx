@@ -74,7 +74,7 @@ export default function Entrance({ projection }: { projection: boolean }) {
         <h2 id="path-title">演示路径</h2>
         <nav className="experiment-steps" aria-label="三步实验">
           <a href="#audit"><span>1</span><strong>进入审计</strong><small>并排读总体识别和群体误判</small></a>
-          <a href="#audit-threshold"><span>2</span><strong>调整阈值</strong><small>观察 TP 与 FP 的边际变化</small></a>
+          <a href="#audit-threshold"><span>2</span><strong>调整阈值</strong><small>在冻结点附近查看 TP 与 FP 的边际变化</small></a>
           <a href="#committee"><span>3</span><strong>进入成本</strong><small>改变假设单价，对照全低风险基线</small></a>
         </nav>
       </section>

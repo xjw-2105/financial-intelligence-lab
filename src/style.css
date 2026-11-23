@@ -403,3 +403,29 @@ fieldset legend, .threshold-heading label { color: #d9e2ec; font-size: 14px; fon
   .comparison-table { min-width: 560px; }
   [data-demo=true] .group-table th { font-size: 13px; }
 }
+
+.error-directions { margin: 12px 0 10px; padding: 12px 14px; border: 1px solid #35556e; border-radius: 5px; background: #101e2e; }
+.error-directions h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 10px; font-size: 18px; }
+.error-directions h3 small, .error-directions p { color: #bbcddd; font-size: 13px; }
+.error-directions dl { display: grid; gap: 8px; margin: 8px 0; }
+.error-directions dl > div { display: grid; grid-template-columns: minmax(154px, auto) 1fr; align-items: baseline; gap: 3px 8px; }
+.error-directions dt { color: #d0e1ef; font-size: 13px; white-space: nowrap; }
+.error-directions dt strong { color: var(--blue); font: 650 22px/1.15 var(--mono); }
+.error-directions dd { color: #e2edf7; font-size: 15px; line-height: 1.35; }
+[data-demo=true] .groups-panel .gap-strip { display: none; }
+.threshold-range { color: #d2e9fa; }
+.decision-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 9px; padding: 5px 10px; color: #f4dfbd; background: #252226; border: 1px solid #695a49; border-radius: 5px; }
+.decision-summary p { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; }
+.decision-summary p span { font-size: 14px; color: #dac3a2; }
+.decision-summary p strong { font-size: 17px; }
+.decision-summary .button { min-height: 28px; }
+[data-demo=true] .point-detail, [data-demo=true] .chart-axis-title { font-size: 14px; }
+[data-demo=true] .cost-comparison dt { font-size: 16px; }
+.chart-precision { margin-top: 4px; }
+@media (max-width: 670px) {
+  .entrance-art { height: 320px; }
+  .entrance-art::after { background: linear-gradient(0deg, #080c16 14%, #080c1660 46%, transparent 70%); }
+  .art-label { top: 15px; bottom: auto; }
+  .hero-copy h1 { text-shadow: 0 2px 12px #080c16; }
+  .error-directions dl > div { grid-template-columns: 1fr; }
+}

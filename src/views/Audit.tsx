@@ -1,6 +1,6 @@
 import { dimensions, frozenIndex, frozenSexBootstrap, groupGap, previousThresholdIndex, thresholdDelta, type Dataset, type ExperimentState, type FrozenRun } from '../domain/experiment'
 import { metricsAt } from '../domain/metrics'
-import { count, decimal, gapDirection, percent, signed } from '../ui/format'
+import { count, decimal, errorDirection, gapDirection, percent, signed } from '../ui/format'
 import { Modal } from '../ui/Modal'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import type { ControlsDispatch } from './Controls'
@@ -53,7 +53,11 @@ function Matrix({ values }: { values: ReturnType<typeof metricsAt> }) {
   )
 }
 
-function GroupTable({ run, index, dimension }: { run: FrozenRun; index: number; dimension: ExperimentState['dimension'] }) {
+const errorRates = ['fpr', 'fnr'] as const
+
+type SignedGaps = Record<typeof errorRates[number], number | null>
+
+function GroupTable({ run, index, dimension, gaps }: { run: FrozenRun; index: number; dimension: ExperimentState['dimension']; gaps: SignedGaps }) {
   const { keys, labels, gap } = dimensions[dimension]
   const rows = keys.map((key, i) => ({ label: labels[i], group: run.groups[key], value: metricsAt(run.groups[key], index) }))
   const fprMax = Math.max(0.01, ...rows.map(row => row.value.fpr ?? 0))
@@ -76,8 +80,8 @@ function GroupTable({ run, index, dimension }: { run: FrozenRun; index: number; 
       </div>
       <div className="gap-strip">
         <span>差距 <b>{gap}</b></span>
-        {(['fpr', 'fnr'] as const).map(key => {
-          const value = groupGap(run, index, dimension, key)
+        {errorRates.map(key => {
+          const value = gaps[key]
           return <div key={key}><span>{key.toUpperCase()}</span> <strong data-gap={key}>{signed(value)}</strong>{value !== null && <small> 个百分点 · {gapDirection(value, dimension)}</small>}</div>
         })}
       </div>
@@ -113,6 +117,9 @@ function ThresholdFeedback({ run, index, previous, dimension }: { run: FrozenRun
 export default function Audit({ data, run, index, state, dispatch, projection }: { data: Dataset; run: FrozenRun; index: number; state: ExperimentState; dispatch: ControlsDispatch; projection: boolean }) {
   const values = metricsAt(run.groups.All, index)
   const previous = previousThresholdIndex(run, state)
+  const { dimension } = state
+  const gaps = { fpr: groupGap(run, index, dimension, 'fpr'), fnr: groupGap(run, index, dimension, 'fnr') }
+  const { gap } = dimensions[dimension]
   return (
     <>
       <div className="audit-overview">
@@ -123,6 +130,14 @@ export default function Audit({ data, run, index, state, dispatch, projection }:
             <div><dt>误报未违约 <small>FP</small></dt><dd data-testid="headline-fp">{count(values.fp)}</dd></div>
             <div><dt>召回率</dt><dd data-testid="headline-recall">{percent(values.recall)}</dd></div>
           </dl>
+          {projection && <section className="error-directions" aria-label="群体错误方向">
+            <h3>群体错误方向 <small>{gap}</small></h3>
+            <dl>{errorRates.map(metric => <div key={metric}>
+              <dt>{metric.toUpperCase()} <strong data-testid={`direction-${metric}`}>{signed(gaps[metric])}</strong>{gaps[metric] !== null && ' 个百分点'}</dt>
+              <dd>{errorDirection(gaps[metric], dimension, metric)}</dd>
+            </div>)}</dl>
+            <p>留出样本的描述性差异</p>
+          </section>}
           <p className="summary-source">MATLAB V3 冻结测试 · {count(run.nCases)} 条留出案例</p>
         </section>
         <section className="panel groups-panel" id="group-comparison" aria-labelledby="groups-title">
@@ -130,8 +145,7 @@ export default function Audit({ data, run, index, state, dispatch, projection }:
             <div className="section-heading"><h2 id="groups-title">群体误判率</h2>
               <TabsList aria-label="群体视角"><TabsTrigger value="sex">性别 F/M</TabsTrigger><TabsTrigger value="age">操作性年龄</TabsTrigger></TabsList>
             </div>
-            <TabsContent value="sex"><GroupTable run={run} index={index} dimension="sex" /></TabsContent>
-            <TabsContent value="age"><GroupTable run={run} index={index} dimension="age" /></TabsContent>
+            <TabsContent value={dimension}><GroupTable key={dimension} run={run} index={index} dimension={dimension} gaps={gaps} /></TabsContent>
           </Tabs>
         </section>
       </div>

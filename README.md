@@ -1,12 +1,12 @@
-# Financial Intelligence Lab V3
+# Financial Intelligence Lab V3.1
 
 面向《科学计算与 MATLAB 应用》课程的本地交互网站。实验室入口、群体公平性审计、假设成本与委员会审议共享同一套 MATLAB V3 冻结测试结果和阈值状态。
 
 ## 在线观看
 
-[Financial Intelligence Lab 公开入口](https://xjw-2105.github.io/financial-intelligence-lab/) · 本包代码版号 3.0.0，实验数据版号 MATLAB V3。线上发布状态见 `evidence/pages-deployment.log`。
+[Financial Intelligence Lab 公开入口](https://xjw-2105.github.io/financial-intelligence-lab/) · 本包代码版号 3.1.0，实验数据版号 MATLAB V3。线上发布状态见 `evidence/pages-deployment.log`。
 
-入口“演示路径”依次打开群体审计、聚焦阈值滑块和进入成本。顶部“演示模式”将总体 TP、FP、召回率与群体差距并排展示。展开四格矩阵可查看完整总体指标，展开九组对照可切换排序指标和性别差距。
+入口“调整阈值”打开冻结点附近的局部细调，当前阈值保持不动，选“查看全域”即可恢复完整范围。顶部“演示模式”将 TP、FP、召回率和两项错误方向同时展示，成本页首屏可直接查看固定委员会建议。展开四格矩阵可查看完整总体指标，展开九组对照可切换排序指标和性别差距。
 
 ## 离线观看
 
@@ -75,8 +75,8 @@ shasum -a 256 native-check.json
 
 仓库 `main` 根目录已有石雕、聚合与许可证。运行 `npm ci` 后执行 `npm run build:pages`，得到兼容该目录结构的 `dist-pages/`。Pages 构建的 `BASE_URL` 仍为 `./`，入口和新文件的哈希见 `evidence/pages-build-sha256.txt`。构建使用与本地版相同的业务源码。
 
-V2 线上基线是 [Git 提交 `2e625f3`](https://github.com/xjw-2105/financial-intelligence-lab/commit/2e625f341fdd69c6a22d179d6bea46fb800ae853)。本地 V2 源码基线另存于 `v2-source-baseline`，V3 在 `v3-development` 上开发。发布前用仓库子路径复跑完整浏览器测试。上线后的验证见 `evidence/pages-deployment.log`。
+V3.0 线上基线是 [Git 提交 `6ee61ce`](https://github.com/xjw-2105/financial-intelligence-lab/commit/6ee61ce571812f4dbb582e425a82bc3a11e21839)。本地 `v3-source-baseline` 指向 V3 源码，V3.1 在 `v3.1-development` 上开发。`v3.1.0` 标签固定源码、锁文件和 Pages 构建。已在仓库子路径重跑完整浏览器测试。推送与线上核验状态见 `evidence/pages-deployment.log`。
 
 ## 边界与下一轮
 
-浏览器截图验证了目标视口的排版，实际投影设备的色彩和网络取决于现场环境。统计边界、兼容性与剩余技术限制见 `V2_to_V3_changes.md`，验收索引见 `evidence/README.md`。
+浏览器截图验证了目标视口的排版，实际投影设备的色彩和网络取决于现场环境。统计边界、兼容性与剩余技术限制见 `V3_to_V3_1_changes.md`，验收索引见 `evidence/README.md`。
