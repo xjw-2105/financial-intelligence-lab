@@ -1,12 +1,12 @@
-# Financial Intelligence Lab V2
+# Financial Intelligence Lab V3
 
 面向《科学计算与 MATLAB 应用》课程的本地交互网站。实验室入口、群体公平性审计、假设成本与委员会审议共享同一套 MATLAB V3 冻结测试结果和阈值状态。
 
 ## 在线观看
 
-[Financial Intelligence Lab 公开入口](https://xjw-2105.github.io/financial-intelligence-lab/) · 本包代码版号 2.0.0，实验数据版号 MATLAB V3。线上发布状态见 `evidence/pages-deployment.log`。
+[Financial Intelligence Lab 公开入口](https://xjw-2105.github.io/financial-intelligence-lab/) · 本包代码版号 3.0.0，实验数据版号 MATLAB V3。线上发布状态见 `evidence/pages-deployment.log`。
 
-入口的三步实验可直接跳到公平性审计与成本审议。顶部“演示模式”放大主要数值和中文说明。展开“九组模型与特征对照”比较各配置自己的 FPR10 冻结点。
+入口“演示路径”依次打开群体审计、聚焦阈值滑块和进入成本。顶部“演示模式”将总体 TP、FP、召回率与群体差距并排展示。展开四格矩阵可查看完整总体指标，展开九组对照可切换排序指标和性别差距。
 
 ## 离线观看
 
@@ -29,7 +29,7 @@ npm run dev
 npm run build
 ```
 
-启动生产静态服务后，在另一终端运行 `npm run test:browser`。它使用本机 Chrome，阻断页面外部请求，重现浏览器验证与截图。如需覆盖 Chrome 路径或端口，使用 `CHROME_PATH`、`FIL_TEST_URL`。浏览器测试覆盖 1440×900、1366×768 和 390px 手机布局，默认在 `evidence/screenshots/` 写入实际截图。
+启动生产静态服务后，在另一终端运行 `npm run test:browser`。它使用本机 Chrome，阻断页面外部请求，重现浏览器验证与截图。如需覆盖 Chrome 路径或端口，使用 `CHROME_PATH`、`FIL_TEST_URL`。浏览器测试覆盖 1440×900、1366×768 和 390px 手机布局，默认在 `evidence/screenshots/` 写入实际截图。`FIL_TEST_URL` 可使用带尾斜杠的子路径网址，用于复验 Pages 产物。
 
 ## 数据和方法
 
@@ -37,7 +37,8 @@ npm run build
 - 本机原生导出的 9,026 个配置与阈值组合，覆盖整体、F/M 和四个操作性年龄组，共 126,364 项 TP/FP 整数比对全部一致。冻结 FPR10 的四格计数也独立与 `performance.csv` 及随附对账表核对。FPR10 是在验证集按 FPR ≤ 10% 的目标确定的冻结点。网页显示当前阈值在测试集的实际 FPR。
 - Full 随机森林的冻结阈值为 0.065698354074301，TP 333、FP 4,188、TN 44,758、FN 721。ROC-AUC 约 0.737593，AP 约 0.070478，二者由原实验提供并独立于当前阈值。
 - Sex F/M 是匿名字段。年龄切换保留原操作性年龄档，年龄差距按 60–100 减 18–29 展示。性别差距为 M 减 F。差距单位为百分点。
-- 默认 FP 为 1、FN 为 3 个假设单位/次。Full 随机森林当前模拟成本 6,351，全低风险基线 3,162，差额 +3,189。单价改变时重新计算情景，课程委员会结论保持“暂缓独立上岗，继续监督测试”。
+- Full 随机森林 FPR10 性别 M − F 的普通 95% 周块 Bootstrap 区间中，FPR 为 [−2.56, −1.56]，FNR 为 [5.29, 13.75]，单位为百分点。共九个测试周块、5,000 次有效重抽。界面在该冻结点展示区间，交互阈值显示描述性差距。
+- 两套单价为假设单位/次。Full 随机森林冻结点的 FP 1、FN 3 情景为 6,351 对 3,162，差额 +3,189，FP 1、FN 15 情景为 15,003 对 15,810，差额 −807。委员会固定课程建议为“暂缓独立上岗，继续监督测试”。
 
 ## MATLAB 原生再导出
 
@@ -53,7 +54,7 @@ python3 scripts/compare_exports.py evidence/reference/v3_prototype_aggregates.js
 shasum -a 256 native-check.json
 ```
 
-`public/data/export_manifest.json` 记录上线产物的原生哈希、字节数及核验规模。发布同一批数据时，预构建 `dist/data/` 与 `public/data/` 保持一致。
+`public/data/export_manifest.json` 记录原生哈希、字节数和对账规模。`dist/data/` 与 `public/data/` 字节一致。若同时有原研究 `src`（含 `v3_bootstrap.m` 与 `hc_metrics.m`）和 `results/bootstrap_sex_gaps.csv`，可用 `check_v3_display(resultsDir, researchSrc, fullfile(pwd, "src", "domain", "bootstrap.json"))` 再现两项区间、情景成本与真实 KNN 同分边界检查。这些步骤读取冻结分数。
 
 ## 项目结构
 
@@ -72,10 +73,10 @@ shasum -a 256 native-check.json
 
 ## GitHub Pages 部署
 
-运行 `npm ci` 和 `npm run build` 后，用 GitHub Pages 工作流将 `dist/` 作为静态部署产物。使用分支发布时也可将 `dist/` 的内容放在发布分支根目录，加入空的 `.nojekyll`，在 Settings → Pages 选择该分支及根目录。Vite 使用相对资源路径，可部署在 GitHub Pages 的仓库子路径。在线仓库当前从 `main` 根目录提供静态产物。
+仓库 `main` 根目录已有石雕、聚合与许可证。运行 `npm ci` 后执行 `npm run build:pages`，得到兼容该目录结构的 `dist-pages/`。Pages 构建的 `BASE_URL` 仍为 `./`，入口和新文件的哈希见 `evidence/pages-build-sha256.txt`。构建使用与本地版相同的业务源码。
 
-部署后以新浏览器会话访问入口、`#audit` 和 `#committee`，核对默认矩阵和成本基线。静态产物包含已获准公开的聚合数据，逐笔 CSV 保留在本机。
+V2 线上基线是 [Git 提交 `2e625f3`](https://github.com/xjw-2105/financial-intelligence-lab/commit/2e625f341fdd69c6a22d179d6bea46fb800ae853)。本地 V2 源码基线另存于 `v2-source-baseline`，V3 在 `v3-development` 上开发。发布前用仓库子路径复跑完整浏览器测试。上线后的验证见 `evidence/pages-deployment.log`。
 
 ## 边界与下一轮
 
-建议在教室设备上复核实际投影的字号、色彩对比和网络。学术上优先补齐时间成熟期、客户级隔离与真实成本口径，当前展示的假设成本和群体差距都属于既有留出测试的复核。详细验收范围见 `evidence/README.md`。
+浏览器截图验证了目标视口的排版，实际投影设备的色彩和网络取决于现场环境。统计边界、兼容性与剩余技术限制见 `V2_to_V3_changes.md`，验收索引见 `evidence/README.md`。

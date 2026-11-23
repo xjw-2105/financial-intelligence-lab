@@ -1,5 +1,6 @@
 import { Dialog } from 'radix-ui'
 import type { ReactNode } from 'react'
+import { staticAsset } from '../domain/assets'
 
 export function Modal({ title, trigger, children }: { title: string; trigger: ReactNode; children: ReactNode }) {
   return (
@@ -27,7 +28,7 @@ export function Method({ compact = false }: { compact?: boolean }) {
         <section><h3>判类与可比性</h3><p>正类表示后续违约标签。分数 ≥ 当前阈值时判为预测高风险。FPR10 在验证集按 FPR ≤ 10% 的目标选点。测试集实际 FPR 由当前配置和阈值决定。分数刻度因模型而异，界面回放冻结结果。</p></section>
         <section><h3>群体与成本口径</h3><p>F/M 是匿名字段。年龄仅用于操作性分层。群体差距依赖已观察样本，无法单独说明因果。成本是用户输入的情景假设，展示范围为当前留出批次。</p></section>
         <section><h3>研究局限</h3><p>数据缺少真实审批决定、实际损失、持续客户标识及时间成熟期验证。本页面的审议结论属于课程情景。</p></section>
-        <a className="data-link" href={`${import.meta.env.BASE_URL}data/v3_aggregate_qa.csv`} download>下载九组冻结对账表</a>
+        <a className="data-link" href={staticAsset('data/v3_aggregate_qa.csv')} download>下载九组冻结对账表</a>
       </div>
     </Modal>
   )

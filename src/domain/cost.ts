@@ -1,3 +1,10 @@
+export const costPresets = {
+  default: { label: '常规权重', prices: { priceFP: '1', priceFN: '3' } },
+  missedDefault: { label: '提高漏判权重', prices: { priceFP: '1', priceFN: '15' } },
+} as const
+
+export type CostPreset = keyof typeof costPresets
+
 export function unitCost(value: string) {
   if (value.trim() === '') return null
   const number = Number(value)

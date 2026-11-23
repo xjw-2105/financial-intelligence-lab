@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { activeIndex, experimentReducer, focusInterval, frozenComparison, frozenIndex, groupGap, initialState, nearestIndex, previousThresholdIndex, thresholdDelta, tradeoffPoints, type Dataset, type RunKey } from '../src/domain/experiment.ts'
-import { costAgainstLowRisk, scenarioCost, unitCost } from '../src/domain/cost.ts'
+import { activeIndex, displayGap, experimentReducer, focusInterval, frozenComparison, frozenIndex, frozenSexBootstrap, groupGap, higherErrorGroup, initialState, nearestIndex, previousThresholdIndex, thresholdDelta, tradeoffPoints, type Dataset, type RunKey } from '../src/domain/experiment.ts'
+import { costAgainstLowRisk, costPresets, scenarioCost, unitCost } from '../src/domain/cost.ts'
 import { gapPP, metricsAt } from '../src/domain/metrics.ts'
 
 const read = (name: string) => readFileSync(new URL(`../public/data/${name}`, import.meta.url), 'utf8')
@@ -176,4 +176,60 @@ test('local focus indexes stay within real points and each comparison uses its o
   }
   assert.equal(frozenComparison(data.runs.Basic_RandomForest).rocAuc.toFixed(4), '0.5731')
   assert.equal(frozenComparison(full).rocAuc.toFixed(4), '0.7376')
+})
+
+test('signed and absolute views preserve the same exact group point and its direction', () => {
+  const index = frozenIndex(full)
+  const fpr = groupGap(full, index, 'sex', 'fpr')
+  const fnr = groupGap(full, index, 'sex', 'fnr')
+  assert.ok(fpr! < 0 && fnr! > 0)
+  assert.equal(displayGap(fpr, 'signed'), fpr)
+  assert.equal(displayGap(fpr, 'absolute'), -fpr!)
+  assert.equal(displayGap(fnr, 'absolute'), fnr)
+  assert.equal(displayGap(null, 'absolute'), null)
+  assert.equal(higherErrorGroup(fpr, 'sex'), 'F')
+  assert.equal(higherErrorGroup(fnr, 'sex'), 'M')
+  assert.equal(higherErrorGroup(-2, 'age'), '18–29')
+  assert.equal(higherErrorGroup(2, 'age'), '60–100')
+  assert.equal(higherErrorGroup(0, 'age'), null)
+  assert.equal(higherErrorGroup(null, 'sex'), null)
+  const state = experimentReducer(initialState, { type: 'gapView', view: 'absolute' })
+  assert.equal(state.gapView, 'absolute')
+  assert.equal(activeIndex(full, state), index)
+})
+
+test('only the verified frozen Full RandomForest sex point can show both bootstrap intervals', () => {
+  const index = frozenIndex(full)
+  const interval = frozenSexBootstrap(full, index, 'sex')!
+  assert.deepEqual([interval.weekBlocks, interval.validReplicates], [9, 5000])
+  for (const key of ['fpr', 'fnr'] as const) {
+    assert.ok(Math.abs(interval.intervals[key].estimate - groupGap(full, index, 'sex', key)!) < 1e-12)
+  }
+  assert.deepEqual([interval.intervals.fpr.low, interval.intervals.fpr.high].map(value => value.toFixed(2)), ['-2.56', '-1.56'])
+  assert.deepEqual([interval.intervals.fnr.low, interval.intervals.fnr.high].map(value => value.toFixed(2)), ['5.29', '13.75'])
+  assert.equal(frozenSexBootstrap(full, index + 1, 'sex'), null)
+  assert.equal(frozenSexBootstrap(full, index, 'age'), null)
+  const basic = data.runs.Basic_RandomForest
+  assert.equal(frozenSexBootstrap(basic, frozenIndex(basic), 'sex'), null)
+})
+
+test('selecting the already active comparison card returns to its freeze and clears marginal changes', () => {
+  const moved = experimentReducer(initialState, { type: 'index', index: frozenIndex(full) + 1 })
+  const selected = experimentReducer(moved, { type: 'comparisonRun', run: 'Full_RandomForest' })
+  assert.equal(activeIndex(full, selected), frozenIndex(full))
+  assert.equal(previousThresholdIndex(full, selected), undefined)
+})
+
+test('both preset prices update atomically without changing the frozen point', () => {
+  const input = experimentReducer(initialState, { type: 'priceFP', value: '0' })
+  const index = frozenIndex(full)
+  const { tp, fp, fn } = metricsAt(full.groups.All, index)
+  for (const [preset, expected] of [['default', [6351, 3162, 3189]], ['missedDefault', [15003, 15810, -807]]] as const) {
+    const state = experimentReducer(input, { type: 'costPreset', preset })
+    assert.equal(activeIndex(full, state), index)
+    assert.equal(state.priceFP, costPresets[preset].prices.priceFP)
+    assert.equal(state.priceFN, costPresets[preset].prices.priceFN)
+    const result = costAgainstLowRisk(tp, fp, fn, full.nCases, state.priceFP, state.priceFN)!
+    assert.deepEqual([result.total, result.baseline, result.difference], expected)
+  }
 })

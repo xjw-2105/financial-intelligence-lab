@@ -1,0 +1,22 @@
+{
+  "run": "Full_RandomForest",
+  "dimension": "sex",
+  "rule": "FPR10",
+  "threshold": 0.065698354074301,
+  "weekBlocks": 9,
+  "validReplicates": 5000,
+  "source": "V3/results/bootstrap_sex_gaps.csv",
+  "sourceSha256": "cce4b5b573220dea53e1cbbc5bff3eb3f6e37073a7d2a65a70c096f490a3a85c",
+  "intervals": {
+    "fpr": {
+      "estimate": -2.01534373212581,
+      "low": -2.55760799186604,
+      "high": -1.55686233591748
+    },
+    "fnr": {
+      "estimate": 9.570221650097901,
+      "low": 5.28969336308786,
+      "high": 13.7541759379263
+    }
+  }
+}

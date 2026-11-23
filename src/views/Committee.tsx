@@ -1,4 +1,4 @@
-import { costAgainstLowRisk, unitCost } from '../domain/cost'
+import { costAgainstLowRisk, costPresets, unitCost, type CostPreset } from '../domain/cost'
 import type { ExperimentState, FrozenRun } from '../domain/experiment'
 import { metricsAt } from '../domain/metrics'
 import { costNumber, count } from '../ui/format'
@@ -19,15 +19,20 @@ export default function Committee({ run, index, state, dispatch }: { run: Frozen
         <article className="panel costs-panel" aria-labelledby="cost-title">
           <div className="section-heading"><div><p className="micro-label bronze">COST SCENARIO</p><h2 id="cost-title">假设成本模拟</h2></div></div>
           <p className="cost-context">当前 {count(run.nCases)} 条留出案例 · 假设成本单位/次</p>
+          <div className="cost-presets" role="group" aria-label="假设成本情景">
+            {(Object.keys(costPresets) as CostPreset[]).map(preset => {
+              const { label, prices } = costPresets[preset]
+              return <button key={preset} type="button" className="button secondary" aria-pressed={state.priceFP === prices.priceFP && state.priceFN === prices.priceFN}
+                onClick={() => dispatch({ type: 'costPreset', preset })}>
+                <strong>假设 · {label}</strong><span>FP {prices.priceFP} · FN {prices.priceFN}</span>
+              </button>
+            })}
+          </div>
           <div className="cost-inputs">
             {([{ key: 'priceFP', label: '假阳性单价 C_FP', cases: fp }, { key: 'priceFN', label: '假阴性单价 C_FN', cases: fn }] as const).map(({ key, label, cases }) =>
               <label key={key}><span>{label}</span><input type="number" min="0" step="any" inputMode="decimal" className="numeric-input" value={state[key]}
                 aria-invalid={unitCost(state[key]) === null} onChange={event => dispatch({ type: key, value: event.target.value })} /><small>{count(cases)} 次</small></label>)}
           </div>
-          <dl className="cost-breakdown">
-            <div><dt>FP 成本分项</dt><dd>{costNumber(result?.falsePositive ?? null)}</dd></div>
-            <div><dt>FN 成本分项</dt><dd>{costNumber(result?.falseNegative ?? null)}</dd></div>
-          </dl>
           {result ? <>
             <dl className="cost-comparison" aria-live="polite">
               <div><dt>当前模拟成本</dt><dd data-testid="cost-total">{costNumber(result.total)}</dd><small>假设单位</small></div>
@@ -39,6 +44,10 @@ export default function Committee({ run, index, state, dispatch }: { run: Frozen
               相对全低风险，多识别 <b data-testid="extra-detected">{count(result.extraDetected)}</b> 例实际违约，增加 <b data-testid="extra-false-alarms">{count(result.extraFalseAlarms)}</b> 例未违约误报。当前模拟成本{direction}。
             </p>
           </> : <p role="status" className="group-warning">请输入两个有效的非负单价，且计算结果须在数值范围内。</p>}
+          <dl className="cost-breakdown">
+            <div><dt>FP 成本分项</dt><dd>{costNumber(result?.falsePositive ?? null)}</dd></div>
+            <div><dt>FN 成本分项</dt><dd>{costNumber(result?.falseNegative ?? null)}</dd></div>
+          </dl>
           <p className="control-note">基线将全部案例判为低风险，假设成本为 {count(run.positives)} 次漏判乘以 C_FN。金额均为假设单位，原实验没有观测真实审批和实际损失。</p>
           {result?.breakEvenRatio !== null && result?.breakEvenRatio !== undefined && <details className="cost-footnote">
             <summary>查看当前测试点的成本临界比</summary>

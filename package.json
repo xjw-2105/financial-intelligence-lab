@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --mode pages",
     "dev": "vite",
     "preview": "vite preview",
     "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/domain.test.ts",
@@ -34,5 +35,5 @@
     "typescript": "5.9.3",
     "vite": "8.3.8"
   },
-  "version": "2.0.0"
+  "version": "3.0.0"
 }

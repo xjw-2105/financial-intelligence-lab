@@ -1,15 +1,21 @@
-import { useState, type Dispatch } from 'react'
-import { features, models, modelNames, frozenIndex, focusInterval, nearestIndex, type FrozenRun, type ExperimentState, type experimentReducer, type RunKey } from '../domain/experiment'
+import { useEffect, useRef, useState, type Dispatch } from 'react'
+import { features, models, modelNames, frozenIndex, focusInterval, nearestIndex, type FrozenRun, type ExperimentState, type experimentReducer, type GapView, type RunKey } from '../domain/experiment'
 import { Slider } from '../ui/slider'
 import { metricsAt } from '../domain/metrics'
 import { decimal, percent } from '../ui/format'
 
 export type ControlsDispatch = Dispatch<Parameters<typeof experimentReducer>[1]>
 
-export function RunControls({ run, index, dispatch }: { run: FrozenRun; index: number; dispatch: ControlsDispatch }) {
+export function RunControls({ run, index, dispatch, projection, focusThreshold }: { run: FrozenRun; index: number; dispatch: ControlsDispatch; projection: boolean; focusThreshold: boolean }) {
+  const section = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!focusThreshold) return
+    const frame = requestAnimationFrame(() => section.current?.querySelector<HTMLElement>('[role="slider"]')?.focus({ preventScroll: true }))
+    return () => cancelAnimationFrame(frame)
+  }, [focusThreshold])
   const selectRun = (key: RunKey) => dispatch({ type: 'run', run: key })
   return (
-    <section id="model-controls" className="controls-panel" aria-label="模型、特征与阈值">
+    <section ref={section} id="model-controls" className="controls-panel" aria-label="模型、特征与阈值">
       <div className="run-pickers">
         <fieldset><legend>已训练模型</legend><div className="segmented">
           {models.map(model => <button type="button" key={model} aria-pressed={model === run.model} onClick={() => selectRun(`${run.featureSet}_${model}`)}>{modelNames[model]}</button>)}
@@ -18,12 +24,12 @@ export function RunControls({ run, index, dispatch }: { run: FrozenRun; index: n
           {features.map(feature => <button type="button" key={feature} aria-pressed={feature === run.featureSet} onClick={() => selectRun(`${feature}_${run.model}`)}>{feature}</button>)}
         </div></fieldset>
       </div>
-      <ThresholdControl key={`${run.featureSet}_${run.model}`} run={run} index={index} dispatch={dispatch} />
+      <ThresholdControl key={`${run.featureSet}_${run.model}`} run={run} index={index} dispatch={dispatch} projection={projection} />
     </section>
   )
 }
 
-function ThresholdControl({ run, index, dispatch }: { run: FrozenRun; index: number; dispatch: ControlsDispatch }) {
+function ThresholdControl({ run, index, dispatch, projection }: { run: FrozenRun; index: number; dispatch: ControlsDispatch; projection: boolean }) {
   const [draft, setDraft] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
   const [focus, setFocus] = useState<ReturnType<typeof focusInterval> | null>(null)
@@ -97,10 +103,15 @@ function ThresholdControl({ run, index, dispatch }: { run: FrozenRun; index: num
         <button className="button small secondary" type="button" aria-label="重置 FPR10" onClick={() => jump(frozen)}>还原 FPR10</button>
       </div>
       <div className="threshold-tools">
-        <button className="button small local-tool" type="button" aria-pressed={Boolean(focus)} onClick={() => setFocus(focus ? null : focusInterval(run.thresholds.length, index))}>局部细调</button>
         <button className="button small local-tool" type="button" disabled={f1 < 0} onClick={() => jump(f1)}>验证集 F1 点</button>
-        <details className="precise-threshold"><summary>精确阈值</summary>
-          <div><output data-testid="exact-threshold">{String(threshold)}</output><button className="button small local-tool" type="button" onClick={copyExact}>复制</button></div>
+        <details className="advanced-threshold" key={String(projection)} open={!projection}>
+          <summary>阈值高级操作</summary>
+          <div className="threshold-advanced-tools">
+            <button className="button small local-tool" type="button" aria-pressed={Boolean(focus)} onClick={() => setFocus(focus ? null : focusInterval(run.thresholds.length, index))}>局部细调</button>
+            <details className="precise-threshold"><summary>精确阈值</summary>
+              <div><output data-testid="exact-threshold">{String(threshold)}</output><button className="button small local-tool" type="button" onClick={copyExact}>复制</button></div>
+            </details>
+          </div>
         </details>
       </div>
       <p className="test-fpr-note">FPR10 在验证集按 FPR ≤ 10% 的目标选点 · <strong>测试集当前 FPR {percent(actualFpr)}</strong></p>
@@ -114,6 +125,15 @@ export function DimensionToggle({ state, dispatch }: { state: ExperimentState; d
     <div className="group-switch" role="group" aria-label="群体视角">
       <button type="button" aria-pressed={state.dimension === 'sex'} onClick={() => dispatch({ type: 'dimension', dimension: 'sex' })}>性别 F/M</button>
       <button type="button" aria-pressed={state.dimension === 'age'} onClick={() => dispatch({ type: 'dimension', dimension: 'age' })}>操作性年龄</button>
+    </div>
+  )
+}
+
+export function GapViewToggle({ value, dispatch }: { value: GapView; dispatch: ControlsDispatch }) {
+  return (
+    <div className="group-switch" role="group" aria-label="差距显示方式">
+      <button type="button" aria-pressed={value === 'signed'} onClick={() => dispatch({ type: 'gapView', view: 'signed' })}>有方向差距</button>
+      <button type="button" aria-pressed={value === 'absolute'} onClick={() => dispatch({ type: 'gapView', view: 'absolute' })}>绝对差距 |gap|</button>
     </div>
   )
 }

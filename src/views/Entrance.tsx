@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Method } from '../ui/Modal'
-import { count, decimal } from '../ui/format'
+import { count } from '../ui/format'
+import { staticAsset } from '../domain/assets'
 import overview from '../domain/overview.json'
 
 const Scene = lazy(() => import('./Scene'))
@@ -11,7 +12,7 @@ class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean
   render() { return this.state.failed ? null : this.props.children }
 }
 
-function EntranceArt() {
+function EntranceArt({ projection }: { projection: boolean }) {
   const [enabled, setEnabled] = useState(false)
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -20,7 +21,7 @@ function EntranceArt() {
     function update() {
       clearTimeout(timer)
       setEnabled(false)
-      if (reduced.matches || !desktop.matches) return
+      if (projection || reduced.matches || !desktop.matches) return
       timer = setTimeout(() => {
         const gl = document.createElement('canvas').getContext('webgl2', { failIfMajorPerformanceCaveat: true })
         if (!gl) return
@@ -36,28 +37,28 @@ function EntranceArt() {
       reduced.removeEventListener('change', update)
       desktop.removeEventListener('change', update)
     }
-  }, [])
+  }, [projection])
   return (
-    <div className="entrance-art" aria-hidden="true" data-art={enabled ? 'webgl-ready' : 'static'}>
+    <div className="entrance-art" aria-hidden="true" data-art={enabled && !projection ? 'webgl-ready' : 'static'}>
       <div className="art-grid" />
-      <img className="bust" src={`${import.meta.env.BASE_URL}art/judgment.webp`} width="1120" height="1024" alt="" fetchPriority="high" />
+      <img className="bust" src={staticAsset('art/judgment.webp')} width="1120" height="1024" alt="" fetchPriority="high" />
       <div className="static-orbits"><i /><i /><i /></div>
-      {enabled && <SceneBoundary><Suspense fallback={null}><Scene /></Suspense></SceneBoundary>}
+      {enabled && !projection && <SceneBoundary><Suspense fallback={null}><Scene /></Suspense></SceneBoundary>}
       <span className="art-label"><i /> 审议装置 <b>JUDGMENT</b></span>
     </div>
   )
 }
 
-export default function Entrance() {
+export default function Entrance({ projection }: { projection: boolean }) {
   const majorityAccuracy = (100 * (1 - overview.positives / overview.cases)).toFixed(3)
   return (
     <main className="landing" id="main" tabIndex={-1}>
       <div className="hero-stage">
-        <EntranceArt />
+        <EntranceArt projection={projection} />
         <div className="hero-copy">
           <p className="eyebrow"><span /> LAB ENTRANCE</p>
-          <h1>预测更准，<br />是否意味着<br /><em>更公平？</em></h1>
-          <p className="hero-lead">用 MATLAB 冻结实验检验信贷 AI。亲手移动判类阈值，观察模型把错误分配给了哪些群体。</p>
+          <h1>预测更准，<br /><em>是否更公平？</em></h1>
+          <p className="hero-lead">用 MATLAB V3 的 {count(overview.cases)} 条留出案例，观察信贷模型如何分配误报与漏判。</p>
           <section id="accuracy-trap" className="hero-trap" aria-label="准确率陷阱">
             <p>全判低风险的准确率陷阱</p>
             <dl><div><dt>准确率</dt><dd>{majorityAccuracy}%</dd></div><div><dt>召回率</dt><dd>0%</dd></div></dl>
@@ -68,17 +69,15 @@ export default function Entrance() {
             <Method />
           </div>
         </div>
-        <dl className="hero-facts">
-          <div><dd>{count(overview.cases)}</dd><dt>V3 留出测试案例</dt></div>
-          <div><dd>{overview.runs}<small>组</small></dd><dt>已训练模型与特征配置</dt></div>
-          <div><dd>{decimal(overview.rocAuc)}</dd><dt>Full 随机森林 ROC-AUC</dt></div>
-        </dl>
       </div>
-      <nav className="experiment-steps" aria-label="三步实验">
-        <a href="#accuracy-trap"><span>01</span><strong>准确率陷阱</strong><small>比较准确率与召回率</small></a>
-        <a href="#audit"><span>02</span><strong>群体误判</strong><small>移动阈值，检查误报与漏判</small></a>
-        <a href="#committee"><span>03</span><strong>假设成本与审议</strong><small>调整单价，对照全低风险基线</small></a>
-      </nav>
+      <section className="experiment-path" aria-labelledby="path-title">
+        <h2 id="path-title">演示路径</h2>
+        <nav className="experiment-steps" aria-label="三步实验">
+          <a href="#audit"><span>1</span><strong>进入审计</strong><small>并排读总体识别和群体误判</small></a>
+          <a href="#audit-threshold"><span>2</span><strong>调整阈值</strong><small>观察 TP 与 FP 的边际变化</small></a>
+          <a href="#committee"><span>3</span><strong>进入成本</strong><small>改变假设单价，对照全低风险基线</small></a>
+        </nav>
+      </section>
     </main>
   )
 }

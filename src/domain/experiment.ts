@@ -1,4 +1,7 @@
 import { gapPP, metricsAt, type GroupStats } from './metrics.ts'
+import { costPresets, type CostPreset } from './cost.ts'
+import bootstrap from './bootstrap.json' with { type: 'json' }
+import { staticAsset } from './assets.ts'
 
 export const models = ['Logistic', 'KNN', 'RandomForest'] as const
 export const features = ['Basic', 'Enhanced', 'Full'] as const
@@ -7,6 +10,7 @@ export type Model = typeof models[number]
 export type FeatureSet = typeof features[number]
 export type GroupDimension = 'sex' | 'age'
 export type GapMetric = 'fpr' | 'fnr'
+export type GapView = 'signed' | 'absolute'
 export type RunKey = `${FeatureSet}_${Model}`
 
 export type FrozenRun = {
@@ -44,29 +48,36 @@ export type ExperimentState = {
   previousIndex?: number | null
   dimension: GroupDimension
   gap: GapMetric
+  gapView: GapView
   priceFP: string
   priceFN: string
 }
 
 export const initialState: ExperimentState = {
-  run: 'Full_RandomForest', index: null, committedIndex: null, dimension: 'sex', gap: 'fpr', priceFP: '1', priceFN: '3',
+  run: 'Full_RandomForest', index: null, committedIndex: null, dimension: 'sex', gap: 'fpr', gapView: 'signed', ...costPresets.default.prices,
 }
 
 type Action =
   | { type: 'run'; run: RunKey }
+  | { type: 'comparisonRun'; run: RunKey }
   | { type: 'index'; index: number | null; preview?: boolean }
   | { type: 'reset' }
   | { type: 'dimension'; dimension: GroupDimension }
   | { type: 'gap'; gap: GapMetric }
+  | { type: 'gapView'; view: GapView }
+  | { type: 'costPreset'; preset: CostPreset }
   | { type: 'priceFP' | 'priceFN'; value: string }
 
 export function experimentReducer(state: ExperimentState, action: Action): ExperimentState {
   switch (action.type) {
     case 'run': return action.run === state.run ? state : { ...state, run: action.run, index: null, committedIndex: null, previousIndex: undefined }
+    case 'comparisonRun': return { ...state, run: action.run, index: null, committedIndex: null, previousIndex: undefined }
     case 'index': return action.preview ? { ...state, index: action.index } : commitIndex(state, action.index)
     case 'reset': return commitIndex(state, null)
     case 'dimension': return { ...state, dimension: action.dimension }
     case 'gap': return { ...state, gap: action.gap }
+    case 'gapView': return { ...state, gapView: action.view }
+    case 'costPreset': return { ...state, ...costPresets[action.preset].prices }
     case 'priceFP':
     case 'priceFN': return { ...state, [action.type]: action.value }
   }
@@ -143,6 +154,21 @@ export function groupGap(run: FrozenRun, index: number, dimension: GroupDimensio
   return gapPP(metricsAt(run.groups[keys[0]], index)[metric], metricsAt(run.groups[keys[keys.length - 1]], index)[metric])
 }
 
+export function displayGap(gap: number | null, view: GapView) {
+  return gap !== null && view === 'absolute' ? Math.abs(gap) : gap
+}
+
+export function higherErrorGroup(gap: number | null, dimension: GroupDimension) {
+  if (gap === null || gap === 0) return null
+  const { labels } = dimensions[dimension]
+  return gap > 0 ? labels[labels.length - 1] : labels[0]
+}
+
+export function frozenSexBootstrap(run: FrozenRun, index: number, dimension: GroupDimension) {
+  return `${run.featureSet}_${run.model}` === bootstrap.run && dimension === bootstrap.dimension &&
+    run.frozenThresholds.FPR10 === bootstrap.threshold && run.thresholds[index] === bootstrap.threshold ? bootstrap : null
+}
+
 export function tradeoffPoints(run: FrozenRun, dimension: GroupDimension, metric: GapMetric) {
   return run.thresholds.flatMap((threshold, index) => {
     const balanced = metricsAt(run.groups.All, index).balanced
@@ -152,7 +178,7 @@ export function tradeoffPoints(run: FrozenRun, dimension: GroupDimension, metric
 }
 
 export async function loadDataset() {
-  const response = await fetch(`${import.meta.env.BASE_URL}data/v3_matlab_aggregates.json`)
+  const response = await fetch(staticAsset('data/v3_matlab_aggregates.json'))
   if (!response.ok) throw new Error(`聚合数据加载失败 (HTTP ${response.status})`)
   const data: Dataset = await response.json()
   if (data.dataType !== 'preaggregated_threshold_counts' ||

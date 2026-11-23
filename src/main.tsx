@@ -12,18 +12,19 @@ const scenes = [
   { id: 'committee', label: '成本与审议' },
 ] as const
 
-function readScene(): typeof scenes[number]['id'] {
-  const hash = location.hash.slice(1)
+function readScene(hash: string): typeof scenes[number]['id'] {
+  if (hash === 'audit-threshold') return 'audit'
   return hash === 'audit' || hash === 'committee' ? hash : 'entrance'
 }
 
 function App() {
-  const [scene, setScene] = useState(readScene)
+  const [hash, setHash] = useState(() => location.hash.slice(1))
+  const scene = readScene(hash)
   const [projection, setProjection] = useState(false)
   const [state, dispatch] = useReducer(experimentReducer, initialState)
   useEffect(() => {
     const change = () => {
-      setScene(readScene())
+      setHash(location.hash.slice(1))
       if (location.hash === '#accuracy-trap') document.getElementById('accuracy-trap')?.scrollIntoView({ block: 'nearest' })
       else window.scrollTo({ top: 0, behavior: 'instant' })
     }
@@ -49,14 +50,14 @@ function App() {
           </div>
         </div>
       </header>
-      {scene === 'entrance' ? <Entrance /> : (
+      {scene === 'entrance' ? <Entrance projection={projection} /> : (
         <Suspense fallback={<main className="workspace" aria-busy="true">正在载入审计工具…</main>}>
-          <Workspace scene={scene} state={state} dispatch={dispatch} />
+          <Workspace scene={scene} state={state} dispatch={dispatch} projection={projection} focusThreshold={hash === 'audit-threshold'} />
         </Suspense>
       )}
       <footer className="site-footer">
         <span>Financial Intelligence Lab</span>
-        <span>MATLAB V3 冻结实验 · 课程展示 V2</span>
+        <span>MATLAB V3 冻结实验 · 课程展示 V3</span>
       </footer>
     </div>
   )

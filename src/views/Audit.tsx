@@ -1,6 +1,6 @@
-import { dimensions, groupGap, previousThresholdIndex, thresholdDelta, type Dataset, type ExperimentState, type FrozenRun } from '../domain/experiment'
+import { dimensions, frozenIndex, frozenSexBootstrap, groupGap, previousThresholdIndex, thresholdDelta, type Dataset, type ExperimentState, type FrozenRun } from '../domain/experiment'
 import { metricsAt } from '../domain/metrics'
-import { count, decimal, percent, signed } from '../ui/format'
+import { count, decimal, gapDirection, percent, signed } from '../ui/format'
 import { Modal } from '../ui/Modal'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import type { ControlsDispatch } from './Controls'
@@ -58,10 +58,11 @@ function GroupTable({ run, index, dimension }: { run: FrozenRun; index: number; 
   const rows = keys.map((key, i) => ({ label: labels[i], group: run.groups[key], value: metricsAt(run.groups[key], index) }))
   const fprMax = Math.max(0.01, ...rows.map(row => row.value.fpr ?? 0))
   const fnrMax = Math.max(0.01, ...rows.map(row => row.value.fnr ?? 0))
+  const interval = frozenSexBootstrap(run, index, dimension)
   return (
     <>
-      {dimension === 'age' ? <p className="group-warning">匿名化日期转换形成的操作性年龄层级，无法确认人口学真实年龄。</p> :
-        <p className="group-note">F/M 为匿名字段标签。各误判率以本组真实负类或正类人数为分母。条形以同列最高值为基准。</p>}
+      {dimension === 'age' ? <p className="group-warning">差距为 60–100 减 18–29。年龄档来自匿名化日期转换，人口学真实年龄未经核证。</p> :
+        <p className="group-note">F/M 为匿名字段。误报以本组实际未违约为分母，漏判以本组实际违约为分母。</p>}
       <div className="table-wrap">
         <table className="group-table">
           <thead><tr><th scope="col">群体</th><th scope="col">样本数</th><th scope="col">FPR · 误报</th><th scope="col">FNR · 漏判</th></tr></thead>
@@ -77,9 +78,15 @@ function GroupTable({ run, index, dimension }: { run: FrozenRun; index: number; 
         <span>差距 <b>{gap}</b></span>
         {(['fpr', 'fnr'] as const).map(key => {
           const value = groupGap(run, index, dimension, key)
-          return <div key={key}><span>{key.toUpperCase()}</span> <strong data-gap={key}>{signed(value)}</strong>{value !== null && <small> 个百分点</small>}</div>
+          return <div key={key}><span>{key.toUpperCase()}</span> <strong data-gap={key}>{signed(value)}</strong>{value !== null && <small> 个百分点 · {gapDirection(value, dimension)}</small>}</div>
         })}
       </div>
+      {interval ? <details className="uncertainty" data-testid="frozen-bootstrap">
+        <summary>查看冻结点的 95% Bootstrap 区间</summary>
+        <p>{interval.weekBlocks} 个测试周块，{count(interval.validReplicates)} 次有效重抽。Full 随机森林 FPR10 性别 M − F（百分点）。</p>
+        <p>FPR <b>[{signed(interval.intervals.fpr.low)}, {signed(interval.intervals.fpr.high)}]</b> · FNR <b>[{signed(interval.intervals.fnr.low)}, {signed(interval.intervals.fnr.high)}]</b></p>
+        <p>区间衡量冻结预测的周块波动，未涵盖重复客户或重训的不确定性。</p>
+      </details> : <p className="uncertainty" role="status">{index === frozenIndex(run) ? '冻结点的描述性差距 · 本页未展示置信区间' : '无置信区间的交互探索 · 仅描述当前测试记录'}</p>}
     </>
   )
 }
@@ -103,17 +110,36 @@ function ThresholdFeedback({ run, index, previous, dimension }: { run: FrozenRun
   )
 }
 
-export default function Audit({ data, run, index, state, dispatch }: { data: Dataset; run: FrozenRun; index: number; state: ExperimentState; dispatch: ControlsDispatch }) {
+export default function Audit({ data, run, index, state, dispatch, projection }: { data: Dataset; run: FrozenRun; index: number; state: ExperimentState; dispatch: ControlsDispatch; projection: boolean }) {
   const values = metricsAt(run.groups.All, index)
   const previous = previousThresholdIndex(run, state)
   return (
     <>
-      <details className="audit-guide">
-        <summary>第一眼应看哪里？</summary>
-        <p>先看本次识别出的实际违约（TP）与误报（FP）。再比群体 FPR、FNR。FPR 的分母是实际未违约案例，FNR 的分母是实际违约案例。</p>
-      </details>
-      {previous !== undefined && <ThresholdFeedback run={run} index={index} previous={previous} dimension={state.dimension} />}
-      <div className="audit-grid">
+      <div className="audit-overview">
+        <section className="panel audit-headline" aria-labelledby="audit-headline-title">
+          <div className="section-heading"><h2 id="audit-headline-title">总体识别效果</h2></div>
+          <dl className="audit-counts">
+            <div><dt>识别违约 <small>TP</small></dt><dd data-testid="headline-tp">{count(values.tp)}</dd></div>
+            <div><dt>误报未违约 <small>FP</small></dt><dd data-testid="headline-fp">{count(values.fp)}</dd></div>
+            <div><dt>召回率</dt><dd data-testid="headline-recall">{percent(values.recall)}</dd></div>
+          </dl>
+          <p className="summary-source">MATLAB V3 冻结测试 · {count(run.nCases)} 条留出案例</p>
+        </section>
+        <section className="panel groups-panel" id="group-comparison" aria-labelledby="groups-title">
+          <Tabs value={state.dimension} onValueChange={value => dispatch({ type: 'dimension', dimension: value === 'age' ? 'age' : 'sex' })}>
+            <div className="section-heading"><h2 id="groups-title">群体误判率</h2>
+              <TabsList aria-label="群体视角"><TabsTrigger value="sex">性别 F/M</TabsTrigger><TabsTrigger value="age">操作性年龄</TabsTrigger></TabsList>
+            </div>
+            <TabsContent value="sex"><GroupTable run={run} index={index} dimension="sex" /></TabsContent>
+            <TabsContent value="age"><GroupTable run={run} index={index} dimension="age" /></TabsContent>
+          </Tabs>
+        </section>
+      </div>
+      {previous !== undefined ? <ThresholdFeedback run={run} index={index} previous={previous} dimension={state.dimension} /> :
+        <p className="audit-adjust-hint">移动阈值，查看每次多识别多少实际违约、同时多误报多少未违约。</p>}
+      <details className="panel audit-details" key={String(projection)} open={!projection}>
+        <summary>四格混淆矩阵与完整总体指标</summary>
+        <div className="audit-grid">
         <Matrix values={values} />
         <article className="panel metric-panel" aria-labelledby="metrics-title">
           <div className="section-heading"><div><p className="micro-label">MODEL PERFORMANCE</p><h2 id="metrics-title">总体指标</h2></div></div>
@@ -127,17 +153,9 @@ export default function Audit({ data, run, index, state, dispatch }: { data: Dat
             <MetricButton metric="averagePrecision" value={decimal(run.frozenMetrics.averagePrecision)} />
           </div>
         </article>
-      </div>
-      <section className="panel groups-panel" id="group-comparison" aria-labelledby="groups-title">
-        <Tabs value={state.dimension} onValueChange={value => dispatch({ type: 'dimension', dimension: value === 'age' ? 'age' : 'sex' })}>
-          <div className="section-heading"><div><p className="micro-label">GROUP COMPARISON</p><h2 id="groups-title">群体误判率</h2></div>
-            <TabsList aria-label="群体视角"><TabsTrigger value="sex">性别 F/M</TabsTrigger><TabsTrigger value="age">操作性年龄</TabsTrigger></TabsList>
-          </div>
-          <TabsContent value="sex"><GroupTable run={run} index={index} dimension="sex" /></TabsContent>
-          <TabsContent value="age"><GroupTable run={run} index={index} dimension="age" /></TabsContent>
-        </Tabs>
-      </section>
-      <Comparison data={data} selected={state.run} dispatch={dispatch} />
+        </div>
+      </details>
+      <Comparison data={data} state={state} dispatch={dispatch} />
     </>
   )
 }

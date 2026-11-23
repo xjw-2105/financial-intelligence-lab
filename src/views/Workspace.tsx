@@ -8,7 +8,7 @@ import { RunControls, type ControlsDispatch } from './Controls'
 const Committee = lazy(() => import('./Committee'))
 let loaded: Promise<Dataset> | undefined
 
-export default function Workspace({ scene, state, dispatch }: { scene: 'audit' | 'committee'; state: ExperimentState; dispatch: ControlsDispatch }) {
+export default function Workspace({ scene, state, dispatch, projection, focusThreshold }: { scene: 'audit' | 'committee'; state: ExperimentState; dispatch: ControlsDispatch; projection: boolean; focusThreshold: boolean }) {
   const [data, setData] = useState<Dataset>()
   const [error, setError] = useState('')
   const reduced = useReducedMotion()
@@ -23,7 +23,7 @@ export default function Workspace({ scene, state, dispatch }: { scene: 'audit' |
   const run = data?.runs[state.run]
   const index = run ? activeIndex(run, state) : 0
   return (
-    <main className="workspace" id="main" tabIndex={-1}>
+    <main className={`workspace workspace-${scene}`} id="main" tabIndex={-1}>
       <div className="workspace-heading">
         <div><p className="eyebrow"><span /> {scene === 'audit' ? 'FAIRNESS AUDIT' : 'COST & COMMITTEE'}</p><h1>{title}</h1>
           <p>{scene === 'audit' ? '移动阈值，比较同一批测试案例的整体表现与群体误判。' : '用情景单价衡量误判成本，查看有限测试下的部署取舍。'}</p></div>
@@ -33,10 +33,10 @@ export default function Workspace({ scene, state, dispatch }: { scene: 'audit' |
         <p aria-busy="true" role="status">正在载入冻结聚合数据…</p>
       ) : (
         <>
-          <RunControls run={run} index={index} dispatch={dispatch} />
+          <RunControls run={run} index={index} dispatch={dispatch} projection={projection} focusThreshold={focusThreshold} />
           <LazyMotion features={domAnimation}>
-            <m.div key={scene} initial={reduced ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.24 }}>
-              {scene === 'audit' ? <Audit data={data} run={run} index={index} state={state} dispatch={dispatch} /> : (
+            <m.div key={scene} initial={reduced || projection ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced || projection ? 0 : 0.24 }}>
+              {scene === 'audit' ? <Audit data={data} run={run} index={index} state={state} dispatch={dispatch} projection={projection} /> : (
                 <Suspense fallback={<p role="status">正在载入成本与权衡曲线…</p>}>
                   <Committee run={run} index={index} state={state} dispatch={dispatch} />
                 </Suspense>
