@@ -57,7 +57,7 @@ function App() {
       )}
       <footer className="site-footer">
         <span>Financial Intelligence Lab</span>
-        <span>MATLAB V3 冻结实验 · 课程展示 V3.1</span>
+        <span>MATLAB 主实验 · 课程展示版</span>
       </footer>
     </div>
   )

@@ -98,11 +98,11 @@ export default function Tradeoff({ run, index, state, dispatch }: { run: FrozenR
         {current && <circle data-testid="selected-point" cx={x(current.balanced)} cy={y(current.ordinate)} r={4.7} fill="#b0deff" stroke="#08131d" strokeWidth={1.5} />}
         {selected && hover !== null && selected.index !== current?.index && <circle cx={x(selected.balanced)} cy={y(selected.ordinate)} r={5.5} fill="#f2f4f7" />}
       </svg>
-      <div className="chart-axis-foot"><span>总体平衡准确率</span><span><i className="dot current" />当前 <i className="dot frozen" />冻结 FPR10</span></div>
+      <div className="chart-axis-foot"><span>总体平衡准确率</span><span><i className="dot current" />当前 <i className="dot frozen" />FPR10 基准点</span></div>
       <details className="precise-threshold chart-precision"><summary>当前点精确阈值</summary><output>{run.thresholds[index]}</output></details>
       {selected && selected.index !== current?.index && <p className="control-note">指向阈值 {decimal(selected.threshold)} · 平衡准确率 {percent(selected.balanced)} · 差距 {gapNumber(selected.gap, state.gapView)} 个百分点</p>}
       <p className="control-note">曲线按阈值顺序连接已导出的工作点，未做帕累托最优前沿筛选。点击离散点或用左右方向键选择阈值。</p>
-      <p className="control-note">{index !== frozenIndex(run) ? '无置信区间的交互探索 · 仅描述当前测试记录。' : frozenSexBootstrap(run, index, state.dimension) ? '性别有方向差距的冻结点区间见审计页。' : '冻结点的描述性差距 · 本页未展示置信区间。'}{state.dimension === 'age' && ' 年龄档来自匿名化日期转换。'}</p>
+      <p className="control-note">{index !== frozenIndex(run) ? '无置信区间的交互探索 · 仅描述当前测试记录。' : frozenSexBootstrap(run, index, state.dimension) ? '基准点的性别有方向差距区间见审计页。' : '基准点的描述性差距 · 本页未展示置信区间。'}{state.dimension === 'age' && ' 年龄档来自匿名化日期转换。'}</p>
     </article>
   )
 }

@@ -87,12 +87,12 @@ function ThresholdControl({ run, index, dispatch, projection, startLocal }: { ru
     <div className="threshold-control">
       <div className="threshold-heading">
         <label htmlFor="threshold-value">模型风险分数阈值</label>
-        {index === frozen && <span className="frozen-pill">FPR10 冻结点</span>}
+        {index === frozen && <span className="frozen-pill">FPR10 基准点</span>}
         {index === f1 && index !== frozen && <span className="frozen-pill">验证集 F1 点</span>}
       </div>
       <div className="threshold-row">
         <div className="threshold-track">
-          {min <= frozen && frozen <= max && <span className="threshold-marker" style={{ left: `${(frozen - min) / (max - min) * 100}%` }} title={`冻结 FPR10 · ${run.frozenThresholds.FPR10}`} />}
+          {min <= frozen && frozen <= max && <span className="threshold-marker" style={{ left: `${(frozen - min) / (max - min) * 100}%` }} title={`FPR10 基准阈值 · ${run.frozenThresholds.FPR10}`} />}
           <Slider min={min} max={max} step={1} value={[index]} thumbLabel="离散阈值" thumbValueText={String(threshold)}
             onValueChange={([value]) => {
               setNotice('')

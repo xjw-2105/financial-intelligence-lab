@@ -141,7 +141,7 @@ export function nearestIndex(thresholds: readonly number[], target: number) {
 
 export function frozenIndex(run: FrozenRun) {
   const index = run.thresholds.indexOf(run.frozenThresholds.FPR10)
-  if (index < 0) throw new Error('当前配置缺少 FPR10 冻结点')
+  if (index < 0) throw new Error('当前配置缺少 FPR10 基准点')
   return index
 }
 
@@ -183,7 +183,7 @@ export async function loadDataset() {
   const data: Dataset = await response.json()
   if (data.dataType !== 'preaggregated_threshold_counts' ||
       !features.every(feature => models.every(model => Boolean(data.runs?.[`${feature}_${model}`])))) {
-    throw new Error('数据版本或九组配置不完整')
+    throw new Error('实验数据或模型配置不完整')
   }
   return data
 }

@@ -58,7 +58,7 @@ export default function Entrance({ projection }: { projection: boolean }) {
         <div className="hero-copy">
           <p className="eyebrow"><span /> LAB ENTRANCE</p>
           <h1>预测更准，<br /><em>是否更公平？</em></h1>
-          <p className="hero-lead">用 MATLAB V3 的 {count(overview.cases)} 条留出案例，观察信贷模型如何分配误报与漏判。</p>
+          <p className="hero-lead">用 MATLAB 主实验的 {count(overview.cases)} 条留出案例，观察信贷模型如何分配误报与漏判。</p>
           <section id="accuracy-trap" className="hero-trap" aria-label="准确率陷阱">
             <p>全判低风险的准确率陷阱</p>
             <dl><div><dt>准确率</dt><dd>{majorityAccuracy}%</dd></div><div><dt>召回率</dt><dd>0%</dd></div></dl>
@@ -74,7 +74,7 @@ export default function Entrance({ projection }: { projection: boolean }) {
         <h2 id="path-title">演示路径</h2>
         <nav className="experiment-steps" aria-label="三步实验">
           <a href="#audit"><span>1</span><strong>进入审计</strong><small>并排读总体识别和群体误判</small></a>
-          <a href="#audit-threshold"><span>2</span><strong>调整阈值</strong><small>在冻结点附近查看 TP 与 FP 的边际变化</small></a>
+          <a href="#audit-threshold"><span>2</span><strong>调整阈值</strong><small>在基准点附近查看 TP 与 FP 的边际变化</small></a>
           <a href="#committee"><span>3</span><strong>进入成本</strong><small>改变假设单价，对照全低风险基线</small></a>
         </nav>
       </section>

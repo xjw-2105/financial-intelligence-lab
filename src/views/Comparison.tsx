@@ -16,7 +16,7 @@ export default function Comparison({ data, state, dispatch }: { data: Dataset; s
   return (
     <details className="panel comparison" id="model-comparison">
       <summary>九组模型与特征对照</summary>
-      <p className="comparison-caveat">各组使用各自的验证集 FPR10 冻结点，测试集实际 FPR 不完全相同。跨档变化同时受到工作点影响，单凭这张表无法归因于新增特征。</p>
+      <p className="comparison-caveat">各组使用各自的验证集 FPR10 基准点，测试集实际 FPR 不完全相同。跨档变化同时受到工作点影响，单凭这张表无法归因于新增特征。</p>
       <div className="tradeoff-controls comparison-controls">
         <div className="group-switch" role="group" aria-label="九组比较视图">
           <button type="button" aria-pressed={view === 'ranking'} onClick={() => setView('ranking')}>排序能力</button>
@@ -32,11 +32,11 @@ export default function Comparison({ data, state, dispatch }: { data: Dataset; s
           <GapViewToggle value={state.gapView} dispatch={dispatch} />
         </>}
       </div>
-      {view === 'ranking' ? <p>比较冻结 ROC-AUC / AP。两项衡量分数排序能力，表内的跨档变化按当前选中指标计算。</p> :
+      {view === 'ranking' ? <p>比较主实验的 ROC-AUC / AP。两项衡量分数排序能力，表内的跨档变化按当前选中指标计算。</p> :
         <p>性别 F/M 的 {state.gapView === 'signed' ? '有方向差距 M − F' : '绝对差距 |M − F|'}以百分点计。各组 FPR 以实际未违约为分母，FNR 以实际违约为分母。</p>}
       <div className="table-wrap" tabIndex={0} role="region" aria-label="九组比较表，可横向滚动">
         <table className="comparison-table">
-          <caption className="sr-only">三种模型在 Basic、Enhanced、Full 特征组的冻结对照</caption>
+          <caption className="sr-only">三种模型在 Basic、Enhanced、Full 特征组的结果对照</caption>
           <thead><tr><th scope="col">模型</th>{features.map(feature => <th key={feature} scope="col">{feature}</th>)}</tr></thead>
           <tbody>{models.map(model => <tr key={model}>
             <th scope="row">{modelNames[model]}</th>
@@ -55,7 +55,7 @@ export default function Comparison({ data, state, dispatch }: { data: Dataset; s
                 <span className="comparison-metrics" id={`comparison-metrics-${key}`}>
                   <span>{view === 'ranking' ? <>{rankingLabels[other]} <b>{decimal(stats[other])}</b></> : gapDirection(stats[gapKey], 'sex')}</span>
                   <span>测试 FPR <b>{percent(stats.fpr)}</b></span>
-                  <span title={String(run.frozenThresholds.FPR10)}>冻结阈值 <b>{decimal(run.frozenThresholds.FPR10)}</b></span>
+                  <span title={String(run.frozenThresholds.FPR10)}>基准阈值 <b>{decimal(run.frozenThresholds.FPR10)}</b></span>
                 </span>
                 <span className="comparison-change">{column === 0 ? '跨档参照' : <>较 {features[column - 1]} <b>{deltaLabel}</b>{view === 'fairness' && delta !== null && ' 个百分点'}</>}</span>
               </button></td>

@@ -12,8 +12,8 @@ const explanations = {
   fpr: { title: 'FPR · 假阳性率', formula: 'FP ÷ (FP + TN)', body: '在真实未违约案例中，被标成高风险的比例。分母是真实负类数。' },
   fnr: { title: 'FNR · 假阴性率', formula: 'FN ÷ (FN + TP)', body: '在真实违约案例中，被模型漏判的比例。分母是真实正类数。' },
   balanced: { title: 'Balanced Accuracy · 平衡准确率', formula: '(Recall + 1 − FPR) ÷ 2', body: '等权衡量对违约与未违约两类的识别表现。两个类都必须有样本。' },
-  rocAuc: { title: 'ROC-AUC', formula: 'ROC 曲线下面积', body: '冻结实验的排序指标，各阈值共用一个值。用来衡量模型对正、负类分数的区分能力。' },
-  averagePrecision: { title: 'AP · 平均精确率', formula: '精确率按召回率增量加权', body: '冻结实验的精确率–召回率排序指标，各阈值共用一个值。' },
+  rocAuc: { title: 'ROC-AUC', formula: 'ROC 曲线下面积', body: '主实验的排序指标，各阈值共用一个值。用来衡量模型对正、负类分数的区分能力。' },
+  averagePrecision: { title: 'AP · 平均精确率', formula: '精确率按召回率增量加权', body: '主实验的精确率–召回率排序指标，各阈值共用一个值。' },
 } as const
 
 function MetricButton({ metric, value }: { metric: keyof typeof explanations; value: string }) {
@@ -86,11 +86,11 @@ function GroupTable({ run, index, dimension, gaps }: { run: FrozenRun; index: nu
         })}
       </div>
       {interval ? <details className="uncertainty" data-testid="frozen-bootstrap">
-        <summary>查看冻结点的 95% Bootstrap 区间</summary>
+        <summary>查看基准点的 95% Bootstrap 区间</summary>
         <p>{interval.weekBlocks} 个测试周块，{count(interval.validReplicates)} 次有效重抽。Full 随机森林 FPR10 性别 M − F（百分点）。</p>
         <p>FPR <b>[{signed(interval.intervals.fpr.low)}, {signed(interval.intervals.fpr.high)}]</b> · FNR <b>[{signed(interval.intervals.fnr.low)}, {signed(interval.intervals.fnr.high)}]</b></p>
-        <p>区间衡量冻结预测的周块波动，未涵盖重复客户或重训的不确定性。</p>
-      </details> : <p className="uncertainty" role="status">{index === frozenIndex(run) ? '冻结点的描述性差距 · 本页未展示置信区间' : '无置信区间的交互探索 · 仅描述当前测试记录'}</p>}
+        <p>区间根据既有预测结果估计周块波动，未涵盖重复客户或重训的不确定性。</p>
+      </details> : <p className="uncertainty" role="status">{index === frozenIndex(run) ? '基准点的描述性差距 · 本页未展示置信区间' : '无置信区间的交互探索 · 仅描述当前测试记录'}</p>}
     </>
   )
 }
@@ -138,7 +138,7 @@ export default function Audit({ data, run, index, state, dispatch, projection }:
             </div>)}</dl>
             <p>留出样本的描述性差异</p>
           </section>}
-          <p className="summary-source">MATLAB V3 冻结测试 · {count(run.nCases)} 条留出案例</p>
+          <p className="summary-source">时间外留出测试 · {count(run.nCases)} 条留出案例</p>
         </section>
         <section className="panel groups-panel" id="group-comparison" aria-labelledby="groups-title">
           <Tabs value={state.dimension} onValueChange={value => dispatch({ type: 'dimension', dimension: value === 'age' ? 'age' : 'sex' })}>

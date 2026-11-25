@@ -27,10 +27,10 @@ export default function Workspace({ scene, state, dispatch, projection, focusThr
       <div className="workspace-heading">
         <div><p className="eyebrow"><span /> {scene === 'audit' ? 'FAIRNESS AUDIT' : 'COST & COMMITTEE'}</p><h1>{title}</h1>
           <p>{scene === 'audit' ? '移动阈值，比较同一批测试案例的整体表现与群体误判。' : '用情景单价衡量误判成本，查看有限测试下的部署取舍。'}</p></div>
-        {run && <div className="dataset-status"><i /> MATLAB V3 冻结结果 <b>{count(run.nCases)} 条留出案例</b></div>}
+        {run && <div className="dataset-status"><i /> MATLAB 主实验结果 <b>{count(run.nCases)} 条留出案例</b></div>}
       </div>
       {error ? <p className="group-warning" role="alert">{error}。请刷新页面再试。</p> : !data || !run ? (
-        <p aria-busy="true" role="status">正在载入冻结聚合数据…</p>
+        <p aria-busy="true" role="status">正在载入主实验汇总数据…</p>
       ) : (
         <>
           <RunControls run={run} index={index} dispatch={dispatch} projection={projection} focusThreshold={focusThreshold} />
